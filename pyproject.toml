@@ -1,0 +1,25 @@
+[project]
+name = "dupler"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "click>=8.2.0",
+    "pydantic>=2.11.4",
+    "rich>=14.0.0",
+    "sqlalchemy>=2.0.40",
+    "textual>=3.2.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+dupler = "dupler.main:main"
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+]

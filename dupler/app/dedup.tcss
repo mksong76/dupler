@@ -1,0 +1,29 @@
+.list-item {
+    padding: 1;
+    height: 6;
+}
+.hash {
+    padding: 0 1;
+    width: 100%;
+    align: center middle;
+}
+.sn {
+    width: 12;
+    align: center middle;
+    text-align: center;
+    padding: 0 2;
+    color: yellow;
+}
+.bottom {
+    /* grid-size: 5;
+    grid-gutter: 0 2; */
+    height: 3;
+    content-align: center middle;
+}
+.bottom Digits { padding: 0 2; }
+.bottom .count { color: yellow; width: 2fr; text-align: right; }
+.bottom .label { color: blue; width: 1fr; }
+.bottom .bytes { text-align: right; width: 3fr; }
+#apply { background: green; width: 1fr; }
+/* #reduced { width: 50%; } */
+/* #processed { text-align: right; width:20%; } */
