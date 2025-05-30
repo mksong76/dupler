@@ -20,11 +20,17 @@ def main():
 
 @main.command("init")
 def init(dir: str | None = None):
+    """
+    Initialize the database for the directory
+    """
     config.init(dir)
 
 
 @main.command("scan")
 def scan():
+    """
+    Scan objects under the directory
+    """
     try:
         cfg = config.get_instance()
     except config.NoConfigError:
@@ -42,7 +48,10 @@ def scan():
 
 
 @main.command("dedup")
-def dedeplucates():
+def deduplicates():
+    """
+    Remove duplicates under the directory
+    """
     cfg = config.get_instance()
     out = Console(stderr=True)
     db = database.get_database()
@@ -105,17 +114,22 @@ def collect_garbage():
         fm.delete_dangled_objects()
         conn.commit()
 
+
 @main.command("find")
 @click.argument("pattern", metavar="<pattern>")
 def find(pattern: str):
+    """
+    Find files in the storage
+    """
     cfg = config.get_instance()
     out = Console(stderr=True)
     db = database.get_database()
     with db.session() as conn:
         fm = filemanager.FileManager(out, conn, cfg)
         for name, path, size in fm.find_files(pattern):
-            file=os.path.normpath(os.path.join(".", path, name))
+            file = os.path.normpath(os.path.join(".", path, name))
             print(file)
+
 
 if __name__ == "__main__":
     main()

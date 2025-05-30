@@ -6,8 +6,14 @@ from typing import Callable, Generator, Optional
 from rich.console import Console, Group
 from rich.live import Live
 from rich.markup import escape
-from rich.progress import (BarColumn, DownloadColumn, Progress, SpinnerColumn,
-                           TextColumn, TimeRemainingColumn)
+from rich.progress import (
+    BarColumn,
+    DownloadColumn,
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    TimeRemainingColumn,
+)
 from sqlalchemy import delete, func, orm, select, update
 
 from . import config, database, model
@@ -483,8 +489,8 @@ class FileManager:
                     self.conn.add(nobj)
                     task.advance()
 
-    def find_files(self, key: str) -> Generator[tuple[str,str,int],None,None]:
-        skey = key if '%' in key else f"%{key}%"
+    def find_files(self, key: str) -> Generator[tuple[str, str, int], None, None]:
+        skey = key if "%" in key else f"%{key}%"
         items = self.conn.scalars(
             select(model.File)
             .join(model.Object)
