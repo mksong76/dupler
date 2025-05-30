@@ -1,6 +1,5 @@
 [project]
 name = "dupler"
-version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -16,6 +15,9 @@ dependencies = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.version]
+path = "dupler/__about__.py"
+
 [project.scripts]
 dupler = "dupler.main:main"
 
@@ -23,3 +25,4 @@ dupler = "dupler.main:main"
 dev = [
     "black>=25.1.0",
 ]
+
