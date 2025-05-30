@@ -17,7 +17,7 @@ from textual.widgets import (
 )
 
 from .. import model
-from ..filemanager import FileManager
+from ..filemanager import FileManager, Duplicate
 from .common import Ask, LogScreen
 
 
@@ -33,7 +33,7 @@ class DeDeplicate(App):
     ]
     CSS_PATH = "dedup.tcss"
 
-    def __init__(self, fm: FileManager, duplicates: dict[bytes, list[model.File]]):
+    def __init__(self, fm: FileManager, duplicates: dict[bytes, Duplicate]):
         super().__init__()
 
         self.title = "De-Duplicate"
@@ -53,18 +53,18 @@ class DeDeplicate(App):
         yield Header()
         with ListView(id="list"):
             cnt = 0
-            for hash, files in self.duplicates.items():
+            for hash, duplicate in self.duplicates.items():
                 yield ListItem(
                     HorizontalGroup(
                         Digits(f"{cnt+1}", classes="sn"),
                         Container(
                             Static(
-                                hash.hex(),
+                                f"{duplicate.name} / {duplicate.size:,d} bytes",
                                 markup=False,
                                 classes="hash",
                             ),
                             Select(
-                                self.options_for_files(files),
+                                self.options_for_files(duplicate.files),
                                 prompt="Select a file to keep",
                                 id=f"file-{hash.hex()}",
                             ),
@@ -124,14 +124,14 @@ class DeDeplicate(App):
         self, origin: bytes, dir_id: int, dirset: set[int]
     ) -> Callable:
         def apply():
-            for hash, files in self.duplicates.items():
+            for hash, duplicate in self.duplicates.items():
                 if hash == origin:
                     continue
-                dirset2 = {x.path_id for x in files}
+                dirset2 = {x.path_id for x in duplicate.files}
                 if dirset == dirset2:
                     s = self.query_one(f"#file-{hash.hex()}", Select)
                     if s.value == Select.BLANK:
-                        value = [x for x in files if x.path_id == dir_id][0].id
+                        value = [x for x in duplicate.files if x.path_id == dir_id][0].id
                         with s.prevent(Select.Changed):
                             s.value = value
                         self.set_selection(hash, value)
@@ -140,12 +140,12 @@ class DeDeplicate(App):
         return apply
 
     def try_generic(self, hash: bytes, value: int):
-        files = self.duplicates[hash]
-        names = [file.name for file in files]
+        duplicate = self.duplicates[hash]
+        names = [file.name for file in duplicate.files]
         name = names.pop(0)
         if all([name == x for x in names]):
-            prefer = [file.directory for file in files if file.id == value][0]
-            dir_set = {file.path_id for file in files}
+            prefer = [file.directory for file in duplicate.files if file.id == value][0]
+            dir_set = {file.path_id for file in duplicate.files}
             self.ask(
                 f"Apply preference to {prefer.path} ",
                 self.apply_for_directory_prefers(hash, prefer.id, dir_set),
@@ -228,7 +228,7 @@ class DeDeplicate(App):
 
         for hash in to_update:
             selector = self.query_one("#file-" + hash.hex(), Select)
-            selector.set_options(self.options_for_files(self.duplicates[hash]))
+            selector.set_options(self.options_for_files(self.duplicates[hash].files))
 
         self.update_statics()
 

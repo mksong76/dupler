@@ -1,7 +1,7 @@
 import enum
 import os
 import stat
-from typing import Callable, Generator, Optional
+from typing import Callable, Generator, NamedTuple, Optional
 
 from rich.console import Console, Group
 from rich.live import Live
@@ -144,6 +144,12 @@ class TaskManager(Live):
     def task_of(self, pgtype: TaskType, index: int = -1) -> Task:
         return self.tasks[pgtype][index]
 
+
+class Duplicate(NamedTuple):
+    name: str
+    size: int
+    hash: bytes
+    files: list[model.File]
 
 class FileManager:
     def __init__(self, out: Console, conn: orm.Session, config: config.Config):
@@ -405,7 +411,7 @@ class FileManager:
                 self.conn.rollback()
                 raise
 
-    def find_duplicates(self) -> dict[bytes, list[model.File]]:
+    def find_duplicates(self) -> dict[bytes, Duplicate]:
         items = self.conn.execute(
             select(model.File, model.Object)
             .join(model.Object.files.of_type(model.File))
@@ -425,7 +431,7 @@ class FileManager:
             len(items),
             transient=True,
         ) as task:
-            duplicates: dict[bytes, list[model.File]] = {}
+            duplicates: dict[bytes, Duplicate] = {}
             for file, obj in items:
                 hash = obj.hash
                 if hash is None:
@@ -441,9 +447,15 @@ class FileManager:
                     )
                     self.conn.commit()
                 if hash not in duplicates:
-                    duplicates[hash] = []
-                duplicates[hash].append(file)
-            duplicates = {k: v for k, v in duplicates.items() if len(v) > 1}
+                    duplicates[hash] = Duplicate(
+                        name=file.name,
+                        size=obj.size,
+                        hash=hash,
+                        files=[],
+                    )
+                duplicates[hash].files.append(file)
+                task.advance()
+            duplicates = {k: v for k, v in duplicates.items() if len(v.files) > 1}
             return duplicates
 
     def delete_file(self, file: model.File):
