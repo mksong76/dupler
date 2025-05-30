@@ -35,7 +35,7 @@ class Directory(Base):
 
 class Object(Base):
     __tablename__ = "objects"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[str] = mapped_column(String(80), primary_key=True)
     size: Mapped[int] = mapped_column(BigInteger)
     modified: Mapped[int] = mapped_column(BigInteger)
     hash: Mapped[Optional[bytes]] = mapped_column(BINARY(32), nullable=True)
@@ -54,7 +54,7 @@ class File(Base):
     )
     name: Mapped[str] = mapped_column(String(1024))
     type: Mapped[int] = mapped_column(Integer)
-    object_id: Mapped[Optional[int]] = mapped_column(
+    object_id: Mapped[Optional[str]] = mapped_column(
         ForeignKey("objects.id"), nullable=True
     )
 

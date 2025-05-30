@@ -196,6 +196,10 @@ class FileManager:
             self.conn.add(dir)
         return dir
 
+    @staticmethod
+    def oid_of(st: os.stat_result) -> str:
+        return f"{st.st_dev}:{st.st_ino}"
+
     def ensure_object(
         self,
         st: os.stat_result,
@@ -204,12 +208,13 @@ class FileManager:
     ) -> model.Object | None:
         if not stat.S_ISREG(st.st_mode):
             return None
-        if obj is None or obj.id != st.st_ino:
-            obj = self.conn.get(model.Object, st.st_ino)
+        oid = self.oid_of(st)
+        if obj is None or obj.id != oid:
+            obj = self.conn.get(model.Object, oid)
         if obj is None:
             hash = get_hash() if get_hash else None
             obj = model.Object(
-                id=st.st_ino,
+                id=oid,
                 modified=st.st_mtime,
                 size=st.st_size,
                 hash=hash,
@@ -244,7 +249,7 @@ class FileManager:
                     self.conn.commit()
         return obj
 
-    def update_file(self, file: model.File, object_id: int | None):
+    def update_file(self, file: model.File, object_id: str | None):
         if file.object_id != object_id:
             file = self.conn.scalars(
                 update(model.File)
@@ -364,20 +369,14 @@ class FileManager:
                 self.conn.delete(db_file)
             else:
                 st = os.lstat(os.path.join(root, db_file.name))
-                obj = self.ensure_object(
-                    st,
-                    obj=db_file.object,
-                    get_hash=lambda: self.calculate_hash(task, root, db_file.name),
-                )
+                obj = self.ensure_object(st, obj=db_file.object)
                 self.update_file(db_file, obj.id if obj else None)
                 files.remove(db_file.name)
                 task.advance()
 
         for filename in files:
             st = os.lstat(os.path.join(root, filename))
-            obj = self.ensure_object(
-                st, get_hash=lambda: self.calculate_hash(task, root, filename)
-            )
+            obj = self.ensure_object(st)
             file = model.File(
                 path_id=dir.id,
                 name=filename,
