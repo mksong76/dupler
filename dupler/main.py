@@ -105,6 +105,17 @@ def collect_garbage():
         fm.delete_dangled_objects()
         conn.commit()
 
+@main.command("find")
+@click.argument("pattern", metavar="<pattern>")
+def find(pattern: str):
+    cfg = config.get_instance()
+    out = Console(stderr=True)
+    db = database.get_database()
+    with db.session() as conn:
+        fm = filemanager.FileManager(out, conn, cfg)
+        for name, path, size in fm.find_files(pattern):
+            file=os.path.normpath(os.path.join(".", path, name))
+            print(file)
 
 if __name__ == "__main__":
     main()

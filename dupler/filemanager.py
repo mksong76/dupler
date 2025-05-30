@@ -1,23 +1,16 @@
-from datetime import datetime
+import enum
 import os
 import stat
-import enum
-from typing import Callable, Optional, Any
+from typing import Callable, Generator, Optional
 
 from rich.console import Console, Group
-from rich.progress import (
-    Progress,
-    BarColumn,
-    DownloadColumn,
-    SpinnerColumn,
-    TextColumn,
-    TimeRemainingColumn,
-)
 from rich.live import Live
 from rich.markup import escape
-from sqlalchemy import func, orm, select, update, delete
+from rich.progress import (BarColumn, DownloadColumn, Progress, SpinnerColumn,
+                           TextColumn, TimeRemainingColumn)
+from sqlalchemy import delete, func, orm, select, update
 
-from . import config, model, database
+from . import config, database, model
 
 
 class TaskType(enum.Enum):
@@ -489,3 +482,18 @@ class FileManager:
                     )
                     self.conn.add(nobj)
                     task.advance()
+
+    def find_files(self, key: str) -> Generator[tuple[str,str,int],None,None]:
+        skey = key if '%' in key else f"%{key}%"
+        items = self.conn.scalars(
+            select(model.File)
+            .join(model.Object)
+            .join(model.Directory)
+            .where(model.File.name.like(skey))
+            .order_by(model.Directory.path, model.File.name)
+        )
+        for file in items:
+            name = file.name
+            path = file.directory.path
+            size = file.object.size
+            yield name, path, size
