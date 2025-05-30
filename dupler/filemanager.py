@@ -407,23 +407,44 @@ class FileManager:
 
     def find_duplicates(self) -> dict[bytes, list[model.File]]:
         items = self.conn.execute(
-            select(model.File, model.Object.hash)
+            select(model.File, model.Object)
             .join(model.Object.files.of_type(model.File))
             .where(
-                model.Object.hash.in_(
-                    select(model.Object.hash)
-                    .group_by(model.Object.hash)
+                model.Object.size.in_(
+                    select(model.Object.size)
+                    .group_by(model.Object.size)
                     .having(func.count(model.Object.id) > 1)
                 )
             )
-            .order_by(model.Object.hash)
+            .order_by(model.Object.size, model.Object.hash)
         ).all()
-        duplicates: dict[bytes, list[model.File]] = {}
-        for file, hash in items:
-            if hash not in duplicates:
-                duplicates[hash] = []
-            duplicates[hash].append(file)
-        return duplicates
+
+        with self.progress().create_task(
+            TaskType.ROOT,
+            f"Scan duplicates in [blue]{escape(self.base_dir)}[/]",
+            len(items),
+            transient=True,
+        ) as task:
+            duplicates: dict[bytes, list[model.File]] = {}
+            for file, obj in items:
+                hash = obj.hash
+                if hash is None:
+                    hash = self.calculate_hash(
+                        task,
+                        self.base_dir,
+                        file.get_path(),
+                    )
+                    self.conn.execute(
+                        update(model.Object)
+                        .where(model.Object.id == obj.id)
+                        .values(hash=hash)
+                    )
+                    self.conn.commit()
+                if hash not in duplicates:
+                    duplicates[hash] = []
+                duplicates[hash].append(file)
+            duplicates = {k: v for k, v in duplicates.items() if len(v) > 1}
+            return duplicates
 
     def delete_file(self, file: model.File):
         self.conn.commit()

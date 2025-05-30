@@ -57,8 +57,7 @@ def deduplicates():
     db = database.get_database()
     with db.session() as conn:
         fm = filemanager.FileManager(out, conn, cfg)
-        with out.status("Finding Duplicates"):
-            duplicates = fm.find_duplicates()
+        duplicates = fm.find_duplicates()
         ui = app.DeDeplicate(fm, duplicates)
         ui.run()
         if not ui.apply:
