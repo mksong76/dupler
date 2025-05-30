@@ -10,6 +10,7 @@ dependencies = [
     "sqlalchemy>=2.0.40",
     "textual>=3.2.0",
 ]
+dynamic = ["version"]
 
 [build-system]
 requires = ["hatchling"]
