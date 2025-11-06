@@ -130,5 +130,20 @@ def find(pattern: str):
             print(file)
 
 
+@main.command("config")
+def config_show():
+    """
+    Show configuration of current directory
+    """
+    out = Console(stderr=True)
+    try:
+        cfg = config.get_instance()
+    except config.NoConfigError:
+        out.print("[red]No configuration found.[/red]")
+        return
+
+    out.print(f"Base Directory: {cfg.base_dir}")
+    out.print(f"Data Directory: {cfg.data_dir}")
+
 if __name__ == "__main__":
     main()

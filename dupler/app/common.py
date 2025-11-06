@@ -40,7 +40,7 @@ class Ask(Screen):
 
     def compose(self) -> ComposeResult:
         with Grid(id="dialog"):
-            yield Label(self.question, id="question")
+            yield Label(self.question, id="question", markup=False)
             yield Button("Yes", variant="success", id="yes")
             yield Button("No", variant="error", id="no")
 
@@ -57,6 +57,7 @@ class Ask(Screen):
 class LogScreen(Screen):
     BINDINGS = [
         ("escape", "app.pop_screen", "Pop screen"),
+        ('c', 'clear_log', 'Clear log'),
     ]
 
     def __init__(self):
@@ -70,6 +71,9 @@ class LogScreen(Screen):
 
     def write(self, *args, **kwargs):
         self.__log.write(*args, **kwargs)
+
+    def action_clear_log(self):
+        self.__log.clear()
 
     def on_mount(self, event: DescendantFocus) -> None:
         self.__log.focus()

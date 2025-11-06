@@ -151,6 +151,7 @@ class Duplicate(NamedTuple):
     hash: bytes
     files: list[model.File]
 
+
 class FileManager:
     def __init__(self, out: Console, conn: orm.Session, config: config.Config):
         self.out = out
